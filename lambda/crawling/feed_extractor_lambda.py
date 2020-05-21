@@ -19,18 +19,18 @@ headers = {
 
 def handler(event=None, context=None):
 
-    for source in ["rtbf"]:#"lesoir", "lalibre", "dhnet", "sudinfo", "levif", "rtlinfo", "lavenir", "lecho"]:
+    for source in ["rtbf", "lesoir", "lalibre", "dhnet", "sudinfo", "levif", "rtlinfo", "lavenir", "lecho"]:
 
         feeds = get_feeds(source)
         print(f"{source}: {len(feeds)} detected")
 
    
-    for feed in feeds:
-        lambda_client.invoke(
-            FunctionName=os.environ["FEEDPARSER_LAMBDA"],
-            InvocationType="Event",
-            Payload=json.dumps(feed)
-        )
+        for feed in feeds:
+            lambda_client.invoke(
+                FunctionName=os.environ["FEEDPARSER_LAMBDA"],
+                InvocationType="Event",
+                Payload=json.dumps(feed)
+            )
 
 
 

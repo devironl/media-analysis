@@ -35,7 +35,7 @@ class CrawlingStack(core.Stack):
             env_dict={
                 "SECRET_ARN": secret.secret_arn,
             },
-            layers=[pymongo_layer],
+            layers=[pymongo_layer, newspaper_layer],
             code_path=code_path
         )
 

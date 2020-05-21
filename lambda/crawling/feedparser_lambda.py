@@ -15,7 +15,6 @@ secrets = json.loads(secret_client.get_secret_value(SecretId=os.environ["SECRET_
 db = MongoClient(secrets["mongo_host"], username=secrets["mongo_user"], password=secrets["mongo_pwd"])["media_analysis"]
 
 def handler(event=None, context=None):
-    event = json.loads(event)
     feed_url = event["feed"]
     
     for article in feedparser.parse(feed_url)["entries"]:
@@ -38,6 +37,14 @@ def handler(event=None, context=None):
             })
 
             
+            # Crawling
+            lambda_client.invoke(
+                FunctionName=os.environ["ARTICLE_LAMBDA"],
+                InvocationType="Event",
+                Payload=json.dumps({"url": article["link"]})
+            )
+        
+        elif db["articles"].find_one({"url":article["link"], "text": {"$exists":False}}):
             # Crawling
             lambda_client.invoke(
                 FunctionName=os.environ["ARTICLE_LAMBDA"],

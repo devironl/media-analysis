@@ -14,7 +14,6 @@ secrets = json.loads(secret_client.get_secret_value(SecretId=os.environ["SECRET_
 db = MongoClient(secrets["mongo_host"], username=secrets["mongo_user"], password=secrets["mongo_pwd"])["media_analysis"]
 
 def handler(event=None, context=None):
-    event = json.loads(event)
     url = event["url"]
 
     try:
