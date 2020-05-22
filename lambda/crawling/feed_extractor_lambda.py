@@ -7,6 +7,8 @@ from secrets import get_secret
 import random
 from pymongo import MongoClient
 import pymongo
+from pprint import pprint
+import feedparser
 
 
 secret_client = boto3.client("secretsmanager")
@@ -29,14 +31,19 @@ headers = {
 
 
 def get_test_url(source):
+    return f"http://{source}"
     url = random.choice([elm["url"] for elm in db["articles"].find({"meta.source.name":source}).sort("_id", pymongo.DESCENDING).limit(100)])
-    return url    
+    return url
+
+be_fr_sources = ["rtbf.be", "lesoir.be", "lalibre.be", "dhnet.be", "sudinfo.be", "levif.be", "rtlinfo.be", "lavenir.net", "lecho.be"]
+be_nl_sources = ["vrt.be", "nieuwsblad.be", "hbvl.be", "gva.be", "tijd.be", "demorgen.be", "standaard.be", "vtm.be"]
 
 
 def handler(event=None, context=None):
 
     print(headers["User-Agent"])
-    for source in ["rtbf.be", "lesoir.be", "lalibre.be", "dhnet.be", "sudinfo.be", "levif.be", "rtlinfo.be", "lavenir.net", "lecho.be"]:
+    #for source in 
+    for source in be_fr_sources + be_nl_sources:
 
         robots = Robots.fetch(f"http://www.{source}/robots.txt")
         
@@ -50,13 +57,14 @@ def handler(event=None, context=None):
             print(f"{source}: {len(feeds)} detected")
         except:
             print(f"Error with following source: {source}")
-
+        """
         for feed in feeds:
             lambda_client.invoke(
                 FunctionName=os.environ["FEEDPARSER_LAMBDA"],
                 InvocationType="Event",
                 Payload=json.dumps(feed)
             )
+        """
 
 def get_feeds(source):
 
@@ -164,19 +172,107 @@ def get_feeds(source):
                 "language": "fr"
             })
         
-    elif source == "lecho.be":
-        feeds = []
-        page = "https://www.lecho.be/site2014/rss"
+    elif source in ["lecho.be", "tijd.be"]:
+        page = f"https://www.{source}/site2014/rss"
         r = requests.get(page, headers=headers)
         root = html.fromstring(r.text)
-        for rss in root.xpath(".//a[starts-with(@href, '/rss')]"):
+        if source == "lecho.be":
+            language = "fr"
+        else:
+            language = "nl"
+        for rss in root.xpath(".//a[starts-with(@href, '/rss/')]"):
             feeds.append({
                 "name": source,
-                "feed_url": f"https://lecho.be{rss.get('href')}",
+                "feed_url": f"https://{source}{rss.get('href')}",
                 "feed_title": rss.text.strip(),
                 "country": "BE",
-                "language": "fr"
+                "language": language
             })
+
+    elif source == "standaard.be":
+        page = "https://www.standaard.be/rssfeeds"
+        r = requests.get(page, headers=headers)
+        root = html.fromstring(r.text)
+        for rss in root.xpath(".//a[starts-with(@href, '/rss/')]"):
+            feeds.append({
+                "name": source,
+                "feed_url": f"https://standaard.be{rss.get('href')}",
+                "feed_title": rss.text.replace("\xa0", "").replace(">", "").strip(),
+                "country": "BE",
+                "language": "nl"
+            })
+
+    elif source == "demorgen.be":
+        for title, url in {
+            "In het nieuws" : "https://www.demorgen.be/in-het-nieuws/rss.xml",
+            "Meningen": "https://www.demorgen.be/meningen/rss.xml",
+            "Politiek": "https://www.demorgen.be/politiek/rss.xml",
+            "TV & Cultuur": "https://www.demorgen.be/tv-cultuur/rss.xml",
+            "Voor u uitgelegd": "https://www.demorgen.be/voor-u-uitgelegd/rss.xml",
+            "Tech & wetenschap": "https://www.demorgen.be/tech-wetenschap/rss.xml",
+            "Leven & Liefde": "https://www.demorgen.be/leven-liefde/rss.xml",
+            "Sport": "https://www.demorgen.be/sport/rss.xml"
+        }.items():
+            feeds.append({
+                "name": source,
+                "feed_url": url,
+                "feed_title": title, 
+                "country": "BE",
+                "language": "nl"
+            })
+
+    elif source in ["gva.be", "hbvl.be"]:
+        page = f"https://www.{source}/rss"
+        r = requests.get(page, headers=headers)
+        root = html.fromstring(r.text)
+        for rss in root.xpath(f".//a[starts-with(@href, '//www.{source}/rss/')]"):
+            if rss.text is not None:
+                feeds.append({
+                    "name": source,
+                    "feed_url": f"https:{rss.get('href')}",
+                    "feed_title": rss.text.strip(),
+                    "country": "BE",
+                    "language": "nl"
+                })
+    
+    elif source == "nieuwsblad.be":
+        page = f"https://www.nieuwsblad.be/rss"
+        r = requests.get(page, headers=headers)
+        root = html.fromstring(r.text)
+        for rss in root.xpath(f".//a[starts-with(@href, 'http://feeds')]"):
+            feeds.append({
+                "name": source,
+                "feed_url": rss.get('href'),
+                "feed_title": rss.text.strip(),
+                "country": "BE",
+                "language": "nl"
+            })
+       
+
+        
+    elif source == "vrt.be":
+        page = f"https://www.vrt.be/vrtnws/nl/services/rss/"
+        r = requests.get(page, headers=headers)
+        root = html.fromstring(r.text)
+        for rss in root.xpath(f".//a[starts-with(@href, 'https://www.vrt.be/vrtnws/nl')]"):
+            feeds.append({
+                "name": source,
+                "feed_url": rss.get('href'),
+                "feed_title": re.sub(".*rss\.([^\.]+)\.xml", "\\1", rss.get("href")),
+                "country": "BE",
+                "language": "nl"
+            })
+
+    elif source == "vtm.be":
+        return [{
+            "name": source,
+            "feed_url":"http://feeds.feedburner.com/vtm/pFaU",
+            "feed_title": "all",
+            "country": "BE",
+            "language":"nl"
+        }]
+
+
 
     else:
         print(f"This source is not covered : {source}")
