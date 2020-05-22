@@ -4,6 +4,8 @@ import os
 from pymongo import MongoClient
 from secrets import get_secret
 from newspaper import Article
+import random
+
 
 secret_client = boto3.client("secretsmanager")
 
@@ -15,26 +17,36 @@ db = MongoClient(secrets["mongo_host"], username=secrets["mongo_user"], password
 def handler(event=None, context=None):
     url = event["url"]
 
-    print(url)
     article = Article(url)
     article.download()
     article.parse()
-    print(article.text)
 
     db["articles"].update_one({"url": url}, {"$set":{
-        "date": article.publish_date,
         "text": article.text,
         "title": article.title,
         "meta.newspaper3k": {
             "authors": article.authors,
             "summary": article.summary,
-            "top_image": article.top_image
+            "top_image": article.top_image,
+            "date": article.publish_date
         }
     }})
 
+def reprocess_empty_articles():
+    urls = db["articles"].find({"text":{"$in":["", None]}}).distinct("url")
+    random.shuffle(urls)
+    print(len(urls))
+    for i, url in enumerate(urls):
+        if i % 10 == 0:
+            print(i)
+        try:
+            handler({
+                "url": url
+            })
+        except:
+            pass
             
 if __name__ == "__main__":
-    handler({
-        "url": "https://plus.lesoir.be/302007/article/2020-05-20/les-flamands-peu-seduits-par-leurs-politiques-durant-cette-crise"
-    })
-    
+
+    reprocess_empty_articles()
+

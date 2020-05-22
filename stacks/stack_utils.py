@@ -14,6 +14,7 @@ def get_lambda(scope, name, env_dict={}, layers=[], code_path="./lambda", reserv
         memory_size=3008,
         timeout=core.Duration.seconds(900),
         reserved_concurrent_executions=reserved_concurrent_executions,
+        max_event_age=core.Duration.hours(1)
     )
 
 def get_layer(scope, layer_name, version=1):

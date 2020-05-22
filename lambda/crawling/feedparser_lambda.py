@@ -19,17 +19,19 @@ def handler(event=None, context=None):
     
     for article in feedparser.parse(feed_url)["entries"]:
 
+        parsed_date = article.get("published_parsed", None)
+
+        try:
+            date = datetime(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], parsed_date[4], parsed_date[5], tzinfo=timezone.utc)
+        except:
+            date = None
+
         meta = {
             "title": article.get("title", None),
             "summary": article.get("summary", None),
+            "published_parsed": date
         }
-        parsed_date = article.get("published_parsed", None)
-        if parsed_date:
-            try:
-                meta["publication_date"] = datetime(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], parsed_date[4], parsed_date[5], tzinfo=timezone.utc)
-            except:
-                pass
-
+        
         to_crawl = False
 
         # if not already crawled
@@ -38,27 +40,19 @@ def handler(event=None, context=None):
             # Inserts in DB
             db["articles"].insert_one({
                 "url": article["link"],
+                "date": date,
                 "meta": {
                     "source": event,
                     "feedparser": meta
                 }
             })
+            
             # Crawling
             lambda_client.invoke(
                 FunctionName=os.environ["ARTICLE_LAMBDA"],
                 InvocationType="Event",
                 Payload=json.dumps({"url": article["link"]})
             )
-
-        """
-        if to_crawl == True or db["articles"].find_one({"url":article["link"], "text": {"$in":[None, ""]}}):
-            # Crawling
-            lambda_client.invoke(
-                FunctionName=os.environ["ARTICLE_LAMBDA"],
-                InvocationType="Event",
-                Payload=json.dumps({"url": article["link"]})
-            )
-        """
         
             
 

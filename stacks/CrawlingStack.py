@@ -18,25 +18,25 @@ class CrawlingStack(core.Stack):
         lxml_layer = get_layer(self, "lxml")
         feedparser_layer = get_layer(self, "feedparser")
         newspaper_layer = get_layer(self, "newspaper3k")
+        reppy_layer = get_layer(self, "reppy")
 
         secret = get_secret(self)
         
         """ Define Lambdas """
         
-        #=====================================================
-        # CLINICAL TRIALS
-        #=====================================================
+        # Crawl article
         article_lambda = get_lambda(
             scope=self,
             name="article_lambda",
             env_dict={
                 "SECRET_ARN": secret.secret_arn,
             },
-            layers=[pymongo_layer, newspaper_layer],
+            layers=[pymongo_layer, newspaper_layer, reppy_layer],
             code_path=code_path,
-            reserved_concurrent_executions=5
+            reserved_concurrent_executions=10
         )
 
+        # Crawl RSS feed
         feedparser_lambda = get_lambda(
             scope=self,
             name="feedparser_lambda",
@@ -44,18 +44,20 @@ class CrawlingStack(core.Stack):
                 "SECRET_ARN": secret.secret_arn,
                 "ARTICLE_LAMBDA": article_lambda.function_name
             },
-            layers=[pymongo_layer, feedparser_layer],
+            layers=[pymongo_layer, feedparser_layer, reppy_layer],
             code_path=code_path,
-            reserved_concurrent_executions=5
+            reserved_concurrent_executions=10
         )
 
+        # Extract RSS feeds
         feed_extractor_lambda = get_lambda(
             scope=self,
             name="feed_extractor_lambda",
             env_dict={
+                "SECRET_ARN": secret.secret_arn,
                 "FEEDPARSER_LAMBDA": feedparser_lambda.function_name
             },
-            layers=[lxml_layer, requests_layer],
+            layers=[lxml_layer, requests_layer, reppy_layer, pymongo_layer],
             code_path=code_path
         )
         
@@ -67,7 +69,6 @@ class CrawlingStack(core.Stack):
         feedparser_lambda.grant_invoke(feed_extractor_lambda)
         article_lambda.grant_invoke(feedparser_lambda)
         
-
         # Cron every 2 hours
         aws_events.Rule(
             scope=self,
