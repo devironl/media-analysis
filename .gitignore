@@ -1,6 +1,6 @@
 *.swp
 package-lock.json
-__pycache__
+*__pycache__
 .pytest_cache
 .env
 *.egg-info
@@ -8,3 +8,5 @@ __pycache__
 # CDK asset staging directory
 .cdk.staging
 cdk.out
+*pyc
+*json

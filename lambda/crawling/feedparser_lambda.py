@@ -4,7 +4,7 @@ import os
 from pymongo import MongoClient
 from secrets import get_secret
 import feedparser
-
+from datetime import datetime, timezone
 
 lambda_client = boto3.client("lambda")
 secret_client = boto3.client("secretsmanager")
@@ -15,48 +15,59 @@ secrets = json.loads(secret_client.get_secret_value(SecretId=os.environ["SECRET_
 db = MongoClient(secrets["mongo_host"], username=secrets["mongo_user"], password=secrets["mongo_pwd"])["media_analysis"]
 
 def handler(event=None, context=None):
-    feed_url = event["feed"]
+    feed_url = event["feed_url"]
     
     for article in feedparser.parse(feed_url)["entries"]:
 
-        for field in ["summary_detail", "title_detail", "tags", "links", "id", "guidislink"]:
+        meta = {
+            "title": article.get("title", None),
+            "summary": article.get("summary", None),
+        }
+        parsed_date = article.get("published_parsed", None)
+        if parsed_date:
             try:
-                del article[field]
+                meta["publication_date"] = datetime(parsed_date[0], parsed_date[1], parsed_date[2], parsed_date[3], parsed_date[4], parsed_date[5], tzinfo=timezone.utc)
             except:
                 pass
 
+        to_crawl = False
+
         # if not already crawled
         if db["articles"].find_one({"url": article["link"]}) == None:
+            
             # Inserts in DB
             db["articles"].insert_one({
                 "url": article["link"],
                 "meta": {
                     "source": event,
-                    "feedparser": article
+                    "feedparser": meta
                 }
             })
+            # Crawling
+            lambda_client.invoke(
+                FunctionName=os.environ["ARTICLE_LAMBDA"],
+                InvocationType="Event",
+                Payload=json.dumps({"url": article["link"]})
+            )
 
-            
+        """
+        if to_crawl == True or db["articles"].find_one({"url":article["link"], "text": {"$in":[None, ""]}}):
             # Crawling
             lambda_client.invoke(
                 FunctionName=os.environ["ARTICLE_LAMBDA"],
                 InvocationType="Event",
                 Payload=json.dumps({"url": article["link"]})
             )
+        """
         
-        elif db["articles"].find_one({"url":article["link"], "text": {"$exists":False}}):
-            # Crawling
-            lambda_client.invoke(
-                FunctionName=os.environ["ARTICLE_LAMBDA"],
-                InvocationType="Event",
-                Payload=json.dumps({"url": article["link"]})
-            )
             
 
 if __name__ == "__main__":
-    handler(json.dumps({
-        "feed": "https://lecho.be/rss/actualite.xml",
-        "source": "lecho.be",
-        "title": "Actualité"
-    }))
+    handler({
+        "feed_url": "https://lecho.be/rss/actualite.xml",
+        "name": "lecho.be",
+        "feed_title": "Actualité",
+        "country": "BE",
+        "language": "fr"
+    })
     

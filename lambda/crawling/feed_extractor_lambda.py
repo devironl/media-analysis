@@ -21,8 +21,11 @@ def handler(event=None, context=None):
 
     for source in ["rtbf", "lesoir", "lalibre", "dhnet", "sudinfo", "levif", "rtlinfo", "lavenir", "lecho"]:
 
-        feeds = get_feeds(source)
-        print(f"{source}: {len(feeds)} detected")
+        try:
+            feeds = get_feeds(source)
+            print(f"{source}: {len(feeds)} detected")
+        except:
+            print(f"Error with following source: {source}")
 
    
         for feed in feeds:
@@ -39,9 +42,11 @@ def get_feeds(source):
     feeds = []
     if source == "rtbf":
         return [{
-            "source": "rtbf.be",
-            "feed": "http://rss.rtbf.be/article/rss/rtbf_flux.xml",
-            "title": "Général"
+            "name": "rtbf.be",
+            "feed_url": "http://rss.rtbf.be/article/rss/rtbf_flux.xml",
+            "feed_title": "Général",
+            "country": "BE",
+            "language": "fr"
         }]
 
     elif source == "lesoir":
@@ -52,9 +57,11 @@ def get_feeds(source):
             href = elm.get("href")
             if re.search("^/rss", href):
                 feeds.append({
-                    "source": "lesoir.be",
-                    "feed": f"https://plus.lesoir.be{href}",
-                    "title": elm.text
+                    "name": "lesoir.be",
+                    "feed_url": f"https://plus.lesoir.be{href}",
+                    "feed_title": elm.text,
+                    "country": "BE",
+                    "language": "fr"
                 })
 
     elif source in ["lalibre", "dhnet"]:
@@ -66,9 +73,11 @@ def get_feeds(source):
             href = url.get("href")
             if re.search("^/rss", href):
                 feeds.append({
-                    "source": f"{source}.be",
-                    "feed": f"https://{source}.be{href}",
-                    "title": " ".join(rss.xpath(".//td[@class='rubriqueName']//text()")).strip()
+                    "name": f"{source}.be",
+                    "feed_url": f"https://{source}.be{href}",
+                    "feed_title": " ".join(rss.xpath(".//td[@class='rubriqueName']//text()")).strip(),
+                    "country": "BE",
+                    "language": "fr"
                 })
         
     elif source == "sudinfo":
@@ -79,20 +88,26 @@ def get_feeds(source):
         root = html.fromstring(r.text)
         for rss in root.xpath("//li[@class='rss__item']//a"):
             feeds.append({
-                "source": "sudinfo.be",
-                "feed": rss.get("href"),
-                "title": rss.text.strip()
+                "name": "sudinfo.be",
+                "feed_url": rss.get("href"),
+                "feed_title": rss.text.strip(),
+                "country": "BE",
+                "language": "fr"
             })
     
     elif source == "levif":
         return [{
-            "source": "levif.be",
-            "feed": "https://www.levif.be/actualite/feed.rss",
-            "title": "Actualité"
+            "name": "levif.be",
+            "feed_url": "https://www.levif.be/actualite/feed.rss",
+            "feed_title": "Actualité",
+            "country": "BE",
+            "language": "fr"
         }, {
-            "source": "levif.be",
-            "feed":"https://trends.levif.be/economie/feed.rss",
-            "title": "Economie"
+            "name": "levif.be",
+            "feed_url":"https://trends.levif.be/economie/feed.rss",
+            "feed_title": "Economie",
+            "country": "BE",
+            "language": "fr"
         }]
 
     elif source == "rtlinfo":
@@ -102,9 +117,11 @@ def get_feeds(source):
         for rss in root.xpath(".//a[starts-with(@href, '//feeds')]"):
         
             feeds.append({
-                "source": "rtlinfo.be",
-                "feed": f"https:{rss.get('href')}",
-                "title": rss.get("href").split("/")[-1].strip()
+                "name": "rtlinfo.be",
+                "feed_url": f"https:{rss.get('href')}",
+                "feed_title": rss.get("href").split("/")[-1].strip(),
+                "country": "BE",
+                "language": "fr"
             })
     
     elif source == "lavenir":
@@ -113,9 +130,11 @@ def get_feeds(source):
         root = html.fromstring(r.text)
         for rss in root.xpath(".//a[starts-with(@href, '/rss')]"):
             feeds.append({
-                "source": "lavenir.net",
-                "feed": f"https://lavenir.net{rss.get('href')}",
-                "title": "".join(rss.xpath(".//text()")[0].split("-")[:-1]).strip()
+                "name": "lavenir.net",
+                "feed_url": f"https://lavenir.net{rss.get('href')}",
+                "feed_title": "".join(rss.xpath(".//text()")[0].split("-")[:-1]).strip(),
+                "country": "BE",
+                "language": "fr"
             })
         
     elif source == "lecho":
@@ -125,9 +144,11 @@ def get_feeds(source):
         root = html.fromstring(r.text)
         for rss in root.xpath(".//a[starts-with(@href, '/rss')]"):
             feeds.append({
-                "source": "lecho.be",
-                "feed": f"https://lecho.be{rss.get('href')}",
-                "title": rss.text.strip()
+                "name": "lecho.be",
+                "feed_url": f"https://lecho.be{rss.get('href')}",
+                "feed_title": rss.text.strip(),
+                "country": "BE",
+                "language": "fr"
             })
 
     else:

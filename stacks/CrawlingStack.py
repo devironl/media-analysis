@@ -9,9 +9,6 @@ class CrawlingStack(core.Stack):
         super().__init__(scope, id, **kwargs)
 
         """ Define Buckets """
-
-    
-
         code_path = "./lambda/crawling"
 
         """ Define Layers """
@@ -36,7 +33,8 @@ class CrawlingStack(core.Stack):
                 "SECRET_ARN": secret.secret_arn,
             },
             layers=[pymongo_layer, newspaper_layer],
-            code_path=code_path
+            code_path=code_path,
+            reserved_concurrent_executions=5
         )
 
         feedparser_lambda = get_lambda(
@@ -47,7 +45,8 @@ class CrawlingStack(core.Stack):
                 "ARTICLE_LAMBDA": article_lambda.function_name
             },
             layers=[pymongo_layer, feedparser_layer],
-            code_path=code_path
+            code_path=code_path,
+            reserved_concurrent_executions=5
         )
 
         feed_extractor_lambda = get_lambda(
@@ -69,12 +68,11 @@ class CrawlingStack(core.Stack):
         article_lambda.grant_invoke(feedparser_lambda)
         
 
-        """
-        # Cron every day at 1PM
+        # Cron every 2 hours
         aws_events.Rule(
             scope=self,
-            id=f"crawler-cron",
-            schedule=aws_events.Schedule.cron(hour="13", minute="0", week_day="TUE-SAT"),
+            id='crawler-cron',
+            schedule=aws_events.Schedule.rate(core.Duration.hours(8)),
             targets=[aws_events_targets.LambdaFunction(feed_extractor_lambda)]
         )
-        """
+        
