@@ -7,8 +7,6 @@ from secrets import get_secret
 import random
 from pymongo import MongoClient
 import pymongo
-from pprint import pprint
-import feedparser
 
 
 secret_client = boto3.client("secretsmanager")
@@ -36,7 +34,7 @@ def get_test_url(source):
     return url
 
 be_fr_sources = ["rtbf.be", "lesoir.be", "lalibre.be", "dhnet.be", "sudinfo.be", "levif.be", "rtlinfo.be", "lavenir.net", "lecho.be"]
-be_nl_sources = ["vrt.be", "nieuwsblad.be", "hbvl.be", "gva.be", "tijd.be", "demorgen.be", "standaard.be", "vtm.be"]
+be_nl_sources = ["vrt.be", "nieuwsblad.be", "hbvl.be", "gva.be", "tijd.be", "demorgen.be", "standaard.be", "vtm.be", "hln.be"]
 
 
 def handler(event=None, context=None):
@@ -57,14 +55,14 @@ def handler(event=None, context=None):
             print(f"{source}: {len(feeds)} detected")
         except:
             print(f"Error with following source: {source}")
-        """
+        
         for feed in feeds:
             lambda_client.invoke(
                 FunctionName=os.environ["FEEDPARSER_LAMBDA"],
                 InvocationType="Event",
                 Payload=json.dumps(feed)
             )
-        """
+        
 
 def get_feeds(source):
 
@@ -269,6 +267,15 @@ def get_feeds(source):
             "feed_url":"http://feeds.feedburner.com/vtm/pFaU",
             "feed_title": "all",
             "country": "BE",
+            "language":"nl"
+        }]
+
+    elif source == "hln.be":
+        return [{
+            "name":source,
+            "feed_url":"https://www.hln.be/google-news.xml",
+            "feed_title": "all",
+            "country":"BE",
             "language":"nl"
         }]
 
