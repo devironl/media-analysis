@@ -34,13 +34,12 @@ def get_test_url(source):
     return url
 
 be_fr_sources = ["rtbf.be", "lesoir.be", "lalibre.be", "dhnet.be", "sudinfo.be", "levif.be", "rtlinfo.be", "lavenir.net", "lecho.be"]
-be_nl_sources = ["vrt.be", "nieuwsblad.be", "hbvl.be", "gva.be", "tijd.be", "demorgen.be", "standaard.be", "vtm.be", "hln.be"]
+be_nl_sources = ["vrt.be", "nieuwsblad.be", "hbvl.be", "gva.be", "tijd.be", "demorgen.be", "standaard.be", "vtm.be", "hln.be", "knack.be"]
 
 
 def handler(event=None, context=None):
 
     print(headers["User-Agent"])
-    #for source in 
     for source in be_fr_sources + be_nl_sources:
 
         robots = Robots.fetch(f"http://www.{source}/robots.txt")
@@ -142,7 +141,7 @@ def get_feeds(source):
             "country": "BE",
             "language": "fr"
         }]
-
+    
     elif source == "rtlinfo.be":
         page = "https://www.rtl.be/info/page/flux-rss-rtl-be/650.aspx"
         r = requests.get(page, headers=headers)
@@ -277,6 +276,14 @@ def get_feeds(source):
             "feed_title": "all",
             "country":"BE",
             "language":"nl"
+        }]
+
+    elif source == "knack.be":
+        return [{
+            "name": source,
+            "feed_url":"https://www.knack.be/nieuws/feed.rss",
+            "country": "BE",
+            "language": "nl"
         }]
 
 
