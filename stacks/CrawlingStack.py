@@ -19,6 +19,7 @@ class CrawlingStack(core.Stack):
         feedparser_layer = get_layer(self, "feedparser")
         newspaper_layer = get_layer(self, "newspaper3k")
         reppy_layer = get_layer(self, "reppy")
+        dateutil_layer = get_layer(self, "python-dateutil")
 
         secret = get_secret(self)
         
@@ -31,7 +32,7 @@ class CrawlingStack(core.Stack):
             env_dict={
                 "SECRET_ARN": secret.secret_arn,
             },
-            layers=[pymongo_layer, newspaper_layer, reppy_layer],
+            layers=[pymongo_layer, newspaper_layer, requests_layer],
             code_path=code_path,
             reserved_concurrent_executions=10
         )
@@ -44,7 +45,7 @@ class CrawlingStack(core.Stack):
                 "SECRET_ARN": secret.secret_arn,
                 "ARTICLE_LAMBDA": article_lambda.function_name
             },
-            layers=[pymongo_layer, feedparser_layer, reppy_layer],
+            layers=[pymongo_layer, feedparser_layer, requests_layer, dateutil_layer],
             code_path=code_path,
             reserved_concurrent_executions=10
         )
