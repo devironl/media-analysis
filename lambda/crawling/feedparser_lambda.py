@@ -64,8 +64,8 @@ def handler(event=None, context=None):
                 }
             })
 
-    ## GOOGLE NEWS SITEMAP
-    elif "google" in feed_url:
+    ## If Sitemap
+    elif "google" in feed_url or "sitemap" in feed_url:
         r = requests.get(feed_url, headers=headers).text
         
         # instead of ET.fromstring(xml)
@@ -100,12 +100,16 @@ def handler(event=None, context=None):
                 })
 
     for article in articles:
+        to_crawl = False
         # if not already crawled
         if db["articles"].find_one({"url": article["url"]}) == None:
             
             # Inserts in DB
             db["articles"].insert_one(article)
-            
+            to_crawl = True
+        
+        # Recrawl if no text extracted
+        if to_crawl == True or db["articles"].find_one({"url": article["url"], "text":{"$in":[None, ""]}}) != None:
             # Crawling
             lambda_client.invoke(
                 FunctionName=os.environ["ARTICLE_LAMBDA"],
