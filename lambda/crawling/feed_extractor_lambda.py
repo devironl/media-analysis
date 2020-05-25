@@ -33,8 +33,8 @@ def get_test_url(source):
     url = random.choice([elm["url"] for elm in db["articles"].find({"meta.source.name":source}).sort("_id", pymongo.DESCENDING).limit(100)])
     return url
 
-be_fr_sources = ["rtbf.be", "lesoir.be", "lalibre.be", "dhnet.be", "sudinfo.be", "levif.be", "rtlinfo.be", "lavenir.net", "lecho.be"]
-be_nl_sources = ["vrt.be", "nieuwsblad.be", "hbvl.be", "gva.be", "tijd.be", "demorgen.be", "standaard.be", "vtm.be", "hln.be", "knack.be"]
+be_fr_sources = ["rtbf.be", "rtlinfo.be", "sudinfo.be", "lavenir.net", "lesoir.be", "dhnet.be", "lalibre.be", "lecho.be", "levif.be"]
+be_nl_sources = ["vrt.be", "hln.be", "nieuwsblad.be", "hbvl.be", "gva.be", "standaard.be", "demorgen.be", "tijd.be", "knack.be"]
 
 
 def handler(event=None, context=None):
@@ -103,7 +103,7 @@ def get_feeds(source):
         for rss in root.xpath("//div[@id='rssLists']//tr"):
             url = rss.xpath(".//a[starts-with(@href, '/rss')]")[0]
             href = url.get("href")
-            if re.search("^/rss", href):
+            if re.search("^/rss", href) and not re.search("(belga|afp).xml", href):
                 feeds.append({
                     "name": source,
                     "feed_url": f"https://{source}{href}",
@@ -140,7 +140,30 @@ def get_feeds(source):
             "feed_title": "Economie",
             "country": "BE",
             "language": "fr"
+        },
+         {
+            "name": source,
+            "feed_url":"https://www.levif.be/actualite-recente/sitemap-news.xml",
+            "feed_title": "News",
+            "country": "BE",
+            "language": "fr"
+        },
+         {
+            "name": source,
+            "feed_url":"https://trends.levif.be/economie/actualites-a-la-une/sitemap-news.xml",
+            "feed_title": "Economie",
+            "country": "BE",
+            "language": "fr"
+        },
+         {
+            "name": source,
+            "feed_url":"https://trends.levif.be/economie/style/actualites-a-la-une/sitemap-news.xml",
+            "feed_title": "Style",
+            "country": "BE",
+            "language": "fr"
         }]
+
+        
     
     elif source == "rtlinfo.be":
         page = "https://www.rtl.be/info/page/flux-rss-rtl-be/650.aspx"
@@ -260,14 +283,6 @@ def get_feeds(source):
                 "language": "nl"
             })
 
-    elif source == "vtm.be":
-        return [{
-            "name": source,
-            "feed_url":"http://feeds.feedburner.com/vtm/pFaU",
-            "feed_title": "all",
-            "country": "BE",
-            "language":"nl"
-        }]
 
     elif source == "hln.be":
         return [{
@@ -283,6 +298,13 @@ def get_feeds(source):
             "name": source,
             "feed_url":"https://www.knack.be/nieuws/feed.rss",
             "country": "BE",
+            "feed_title": "News",
+            "language": "nl"
+        },{
+            "name": source,
+            "feed_url":"https://www.knack.be/nieuws/recent-nieuws/sitemap-news.xml",
+            "country": "BE",
+            "feed_title": "News",
             "language": "nl"
         }]
 
