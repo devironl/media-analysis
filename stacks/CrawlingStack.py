@@ -74,7 +74,7 @@ class CrawlingStack(core.Stack):
         aws_events.Rule(
             scope=self,
             id='crawler-cron',
-            schedule=aws_events.Schedule.rate(core.Duration.hours(8)),
+            schedule=aws_events.Schedule.rate(core.Duration.hours(4)),
             targets=[aws_events_targets.LambdaFunction(feed_extractor_lambda)]
         )
         
