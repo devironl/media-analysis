@@ -8,7 +8,7 @@ import random
 import requests
 
 def get_cookie(url):
-    if "hln.be" in url or "demorgen.be" in url:
+    if "hln.be" in url or "demorgen.be" in url or "humo.be":
         return "pwv=1; pws=functional"
     
     return None
@@ -34,47 +34,49 @@ def handler(event=None, context=None):
     url = event["url"]
 
     cookie = get_cookie(url)
+
+    article = Article(url)
+    article.download()
+    article.parse()
+   
     if cookie is not None:
         headers["Cookie"] = cookie
        
         html = requests.get(url, headers=headers).text
-      
-        
-        db["articles"].update_one({"url": url}, {"$set": {
-            "text": text
-        }})
-   
-    else:
-        article = Article(url)
-        article.download()
-        article.parse()
+        text = fulltext(html)
 
-        db["articles"].update_one({"url": url}, {"$set":{
-            "text": article.text,
-            "title": article.title,
-            "meta.newspaper3k": {
-                "authors": article.authors,
-                "summary": article.summary,
-                "top_image": article.top_image,
-                "date": article.publish_date
-            }
-        }})
+    else:
+        text = article.text
+      
+   
+    db["articles"].update_one({"url": url}, {"$set":{
+        "text": text,
+        "title": article.title,
+        "meta.newspaper3k": {
+            "authors": article.authors,
+            "summary": article.summary,
+            "top_image": article.top_image,
+            "date": article.publish_date,
+            "title": article.title
+        }
+    }})
 
 def reprocess_empty_articles():
-    urls = db["articles"].find({"text":{"$in":["", None]}}).distinct("url")
+    urls = db["articles"].find({"meta.source.name":"lalibre.be", "text":{"$in":["", None]}}).distinct("url")
     random.shuffle(urls)
     print(len(urls))
     for i, url in enumerate(urls):
         if i % 10 == 0:
             print(i)
-        try:
-            handler({
-                "url": url
-            })
-        except:
-            pass
+        #try:
+        handler({
+            "url": url
+        })
+        #except:
+        #    pass
             
 if __name__ == "__main__":
-
+    #url = "https://www.dhnet.be/sports/tennis/debut-d-un-mini-tournoi-en-floride-besoin-de-competition-pour-avancer-5ec8df127b50a60f8bdab3bd"
+    #handler({"url":url})
     reprocess_empty_articles()
     
