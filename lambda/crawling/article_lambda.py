@@ -47,19 +47,22 @@ def handler(event=None, context=None):
 
     else:
         text = article.text
-      
-   
-    db["articles"].update_one({"url": url}, {"$set":{
-        "text": text,
-        "title": article.title,
-        "meta.newspaper3k": {
-            "authors": article.authors,
-            "summary": article.summary,
-            "top_image": article.top_image,
-            "date": article.publish_date,
-            "title": article.title
-        }
-    }})
+
+    if "Websites hanteren" not in text and text != "":
+        
+        
+    
+        db["articles"].update_one({"url": url}, {"$set":{
+            "text": text,
+            "title": article.title,
+            "meta.newspaper3k": {
+                "authors": article.authors,
+                "summary": article.summary,
+                "top_image": article.top_image,
+                "date": article.publish_date,
+                "title": article.title
+            }
+        }})
 
 def reprocess_empty_articles():
     urls = db["articles"].find({"meta.source.name":"lalibre.be", "text":{"$in":["", None]}}).distinct("url")
