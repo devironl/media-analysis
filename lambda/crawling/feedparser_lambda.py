@@ -53,7 +53,7 @@ def handler(event=None, context=None):
                 "summary": article.get("summary", None),
                 "published_parsed": date
             }
-
+    
             articles.append({
                 "url": article["link"],
                 "date": date,
@@ -105,8 +105,9 @@ def handler(event=None, context=None):
         if db["articles"].find_one({"url": article["url"]}) == None:
             
             # Inserts in DB
-            db["articles"].insert_one(article)
-            to_crawl = True
+            if article["date"].replace(tzinfo=None) > datetime(2020, 5, 1):
+                db["articles"].insert_one(article)
+                to_crawl = True
         
         # Recrawl if no text extracted
         if to_crawl == True or db["articles"].find_one({"url": article["url"], "text":{"$in":[None, ""]}}) != None:
@@ -114,7 +115,11 @@ def handler(event=None, context=None):
             lambda_client.invoke(
                 FunctionName=os.environ["ARTICLE_LAMBDA"],
                 InvocationType="Event",
-                Payload=json.dumps({"url": article["url"]})
+                Payload=json.dumps({
+                    "url": article["url"],
+                    "source": article["meta"]["source"]["name"],
+                    "language": article["meta"]["source"]["language"]
+                })
             )
 
 def remove_namespaces(tree):
@@ -126,8 +131,8 @@ def remove_namespaces(tree):
 
 if __name__ == "__main__":
     handler({
-       # "feed_url": "https://www.hln.be/google-news.xml",
-        "feed_url":"https://www.lalibre.be/sitemap_googlenews.xml",
+        "feed_url": "https://www.hln.be/google-news.xml",
+        #"feed_url":"https://www.lalibre.be/sitemap_googlenews.xml",
         "name": "hln.be",
         "feed_title": "Actualité",
         "country": "BE",
