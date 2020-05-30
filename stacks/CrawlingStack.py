@@ -70,7 +70,7 @@ class CrawlingStack(core.Stack):
         feedparser_lambda.grant_invoke(feed_extractor_lambda)
         article_lambda.grant_invoke(feedparser_lambda)
         
-        # Cron every 2 hours
+        # Cron every 4 hours
         aws_events.Rule(
             scope=self,
             id='crawler-cron',

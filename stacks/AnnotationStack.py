@@ -48,13 +48,13 @@ class AnnotationStack(core.Stack):
         
         textrazor_lambda.grant_invoke(annotation_lambda)
 
-        """        
-        # Cron every 2 hours
+                
+        # Cron every 4 hours
         aws_events.Rule(
             scope=self,
-            id='crawler-cron',
+            id='annotation-cron',
             schedule=aws_events.Schedule.rate(core.Duration.hours(4)),
-            targets=[aws_events_targets.LambdaFunction(feed_extractor_lambda)]
+            targets=[aws_events_targets.LambdaFunction(annotation_lambda)]
         )
-        """
+        
         
