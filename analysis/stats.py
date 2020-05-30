@@ -18,5 +18,5 @@ for entry in db["articles"].find():
     })
 
 df = pd.DataFrame(results)
-df.to_excel("./daily_stats.xlsx", index=False)
+df.to_excel("./result_files/daily_stats.xlsx", index=False)
 
