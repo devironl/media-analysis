@@ -11,7 +11,7 @@ import pymongo
 
 secret_client = boto3.client("secretsmanager")
 
-#secrets = get_secret()
+secrets = get_secret()
 secrets = json.loads(secret_client.get_secret_value(SecretId=os.environ["SECRET_ARN"])["SecretString"])
 db = MongoClient(secrets["mongo_host"], username=secrets["mongo_user"], password=secrets["mongo_pwd"])["media_analysis"]
 
@@ -259,7 +259,7 @@ def get_feeds(source):
         page = f"https://www.nieuwsblad.be/rss"
         r = requests.get(page, headers=headers)
         root = html.fromstring(r.text)
-        for rss in root.xpath(f".//a[starts-with(@href, 'http://feeds')]"):
+        for rss in root.xpath(f".//a[contains(@href, '/rss/')]"):
             feeds.append({
                 "name": source,
                 "feed_url": rss.get('href'),
@@ -271,17 +271,14 @@ def get_feeds(source):
 
         
     elif source == "vrt.be":
-        page = f"https://www.vrt.be/vrtnws/nl/services/rss/"
-        r = requests.get(page, headers=headers)
-        root = html.fromstring(r.text)
-        for rss in root.xpath(f".//a[starts-with(@href, 'https://www.vrt.be/vrtnws/nl')]"):
-            feeds.append({
-                "name": source,
-                "feed_url": rss.get('href'),
-                "feed_title": re.sub(".*rss\.([^\.]+)\.xml", "\\1", rss.get("href")),
-                "country": "BE",
-                "language": "nl"
-            })
+        
+        feeds.append({
+            "name": source,
+            "feed_url": "https://www.vrt.be/vrtnws/nl.news-sitemap.xml",
+            "feed_title": "VRT - Sitemap",
+            "country": "BE",
+            "language": "nl"
+        })
 
 
     elif source == "hln.be":
@@ -318,3 +315,5 @@ def get_feeds(source):
 
 if __name__ == "__main__":
     handler()
+
+    
