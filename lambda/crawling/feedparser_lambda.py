@@ -24,7 +24,6 @@ headers = {
 lambda_client = boto3.client("lambda")
 secret_client = boto3.client("secretsmanager")
 
-#secrets = get_secret()
 secrets = json.loads(secret_client.get_secret_value(SecretId=os.environ["SECRET_ARN"])["SecretString"])
 
 db = MongoClient(secrets["mongo_host"], username=secrets["mongo_user"], password=secrets["mongo_pwd"])["media_analysis"]
@@ -130,9 +129,10 @@ def remove_namespaces(tree):
 
 
 if __name__ == "__main__":
+
+    
     handler({
-        "feed_url": "https://www.hln.be/google-news.xml",
-        #"feed_url":"https://www.lalibre.be/sitemap_googlenews.xml",
+        "feed_url": "https://www.nieuwsblad.be/rss/section/68fecd9d-d038-410d-865c-a147011fedd1",
         "name": "hln.be",
         "feed_title": "Actualité",
         "country": "BE",
