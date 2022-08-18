@@ -2,7 +2,6 @@ import requests, re, json
 from lxml import html
 import boto3
 import os
-from reppy.robots import Robots
 from secrets import get_secret
 import random
 from pymongo import MongoClient
@@ -41,13 +40,6 @@ def handler(event=None, context=None):
 
     print(headers["User-Agent"])
     for source in be_fr_sources + be_nl_sources:
-
-        robots = Robots.fetch(f"http://www.{source}/robots.txt")
-        
-        agent = robots.agent(headers["User-Agent"])
-
-        test_url = get_test_url(source)
-        allowed = agent.allowed(test_url)
         
         try:
             feeds = get_feeds(source)
