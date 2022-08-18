@@ -1,0 +1,6 @@
+requests
+pymongo
+lxml
+feedparser
+newspaper3k
+python-dateutil

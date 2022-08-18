@@ -1,65 +1,75 @@
-from aws_cdk import core, aws_lambda, aws_secretsmanager, aws_apigateway, aws_events, aws_events_targets
-from stacks.stack_utils import *
+from constructs import Construct
+from aws_cdk import Stack, Duration
+from aws_cdk import aws_lambda
+from aws_cdk import aws_secretsmanager
+from aws_cdk import aws_apigateway
+from aws_cdk import aws_events, aws_events_targets
 
 
-class CrawlingStack(core.Stack):
+class CrawlingStack(Stack):
     
-    def __init__(self, scope: core.Construct, id: str, **kwargs) -> None:
+    def __init__(self, scope: Construct, id: str, **kwargs) -> None:
 
         super().__init__(scope, id, **kwargs)
 
-        """ Define Buckets """
         code_path = "./lambda/crawling"
 
-        """ Define Layers """
-        
-        requests_layer = get_layer(self, "requests")
-        pymongo_layer = get_layer(self, "pymongo")
-        lxml_layer = get_layer(self, "lxml")
-        feedparser_layer = get_layer(self, "feedparser")
-        newspaper_layer = get_layer(self, "newspaper3k")
-        reppy_layer = get_layer(self, "reppy")
-        dateutil_layer = get_layer(self, "python-dateutil")
-
-        secret = get_secret(self)
+        secret = aws_secretsmanager.Secret.from_secret_attributes(
+            scope=self,
+            id="media-analysis-secret",
+            secret_partial_arn=f"arn:aws:secretsmanager:eu-west-3:771823009556:secret:media_analysis_secret"
+        )
         
         """ Define Lambdas """
         
         # Crawl article
-        article_lambda = get_lambda(
+        article_lambda = PythonFunction(
             scope=self,
-            name="article_lambda",
-            env_dict={
+            id=f"media-analysis-article-lambda",
+            runtime=aws_lambda.Runtime.PYTHON_3_9,
+            function_name=f"media-analysis-article-lambda",
+            entry=code_path,
+            index="article_lambda.py",
+            environment={
                 "SECRET_ARN": secret.secret_arn,
             },
-            layers=[pymongo_layer, newspaper_layer, requests_layer],
-            code_path=code_path,
+            timeout=Duration.seconds(900),
+            memory_size=3008,
             reserved_concurrent_executions=10
         )
 
         # Crawl RSS feed
-        feedparser_lambda = get_lambda(
+        feedparser_lambda = PythonFunction(
             scope=self,
-            name="feedparser_lambda",
-            env_dict={
+            id=f"media-analysis-feedparser-lambda",
+            runtime=aws_lambda.Runtime.PYTHON_3_9,
+            function_name=f"media-analysis-feedparser-lambda",
+            entry=code_path,
+            index="feedparser_lambda.py",
+            environment={
                 "SECRET_ARN": secret.secret_arn,
                 "ARTICLE_LAMBDA": article_lambda.function_name
             },
-            layers=[pymongo_layer, feedparser_layer, requests_layer, dateutil_layer],
-            code_path=code_path,
+            timeout=Duration.seconds(900),
+            memory_size=3008,
             reserved_concurrent_executions=10
         )
+      
 
         # Extract RSS feeds
-        feed_extractor_lambda = get_lambda(
+        feed_extractor_lambda = PythonFunction(
             scope=self,
-            name="feed_extractor_lambda",
-            env_dict={
+            id=f"media-analysis-feed-extractor-lambda",
+            runtime=aws_lambda.Runtime.PYTHON_3_9,
+            function_name=f"media-analysis-feed-extractor-lambda",
+            entry=code_path,
+            index="feed_extractor_lambda.py",
+            environment={
                 "SECRET_ARN": secret.secret_arn,
                 "FEEDPARSER_LAMBDA": feedparser_lambda.function_name
             },
-            layers=[lxml_layer, requests_layer, reppy_layer, pymongo_layer],
-            code_path=code_path
+            timeout=Duration.seconds(900),
+            memory_size=3008,
         )
         
         secret.grant_read(article_lambda)
@@ -73,8 +83,8 @@ class CrawlingStack(core.Stack):
         # Cron every 4 hours
         aws_events.Rule(
             scope=self,
-            id='crawler-cron',
-            schedule=aws_events.Schedule.rate(core.Duration.hours(4)),
+            id='media-analysis-crawler-cron',
+            schedule=aws_events.Schedule.rate(Duration.hours(4)),
             targets=[aws_events_targets.LambdaFunction(feed_extractor_lambda)]
         )
         
