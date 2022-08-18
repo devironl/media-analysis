@@ -12,3 +12,6 @@ cdk.out
 *json
 *xlsx
 *csv
+
+.DS_Store
+venv

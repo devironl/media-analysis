@@ -1,8 +1,14 @@
--e .
-reppy==0.4.14
-feedparser==5.2.1
-requests==2.23.0
-lxml==4.5.1
-newspaper3k==0.2.8
-pymongo==3.10.1
-python-dateutil==2.8.1
+aws-cdk-lib
+constructs
+aws_cdk.aws_lambda_python_alpha
+aws_cdk.aws_events_targets
+aws_cdk.aws_secretsmanager
+aws_cdk.aws_apigateway
+aws_cdk.aws_lambda
+aws_cdk.aws_events
+feedparser
+requests
+lxml
+newspaper3k
+pymongo
+python-dateutil
