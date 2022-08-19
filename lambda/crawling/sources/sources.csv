@@ -1,0 +1,17 @@
+﻿name,country,language,feed_url,feed_title
+rtbf.be,BE,fr,https://www.rtbf.be/site-map/articles.xml,General
+lesoir.be,BE,fr,https://www.lesoir.be/sites/default/files/sitemaps/plus_lesoir_be/sitemapnews-0.xml,General
+dhnet.be,BE,fr,https://www.dhnet.be/arc/outboundfeeds/sitemap-news/?outputType=xml,General
+lalibre.be,BE,fr,https://www.lalibre.be/arc/outboundfeeds/sitemap-news/?outputType=xml,General
+sudinfo.be,BE,fr,https://www.sudinfo.be/sites/default/files/sitemaps/sitemapnews-0.xml,General
+levif.be,BE,fr,https://trends.levif.be/economie/actualites-a-la-une/sitemap-news.xml,General
+levif.be,BE,fr,https://datanews.levif.be/ict/actualite-recente/sitemap-news.xml,General
+levif.be,BE,fr,https://www.levif.be/news-sitemap.xml,General
+lavenir.net,BE,fr,https://www.lavenir.net/arc/outboundfeeds/sitemap-news/?outputType=xml,General
+lecho.be,BE,fr,https://www.lecho.be/news/sitemap.xml,General
+tijd.be,BE,nl,https://www.tijd.be/news/sitemap.xml,General
+demorgen.be,BE,nl,https://www.demorgen.be/sitemap.xml,General
+vrt.be,BE,nl,https://www.vrt.be/vrtnws/nl.news-sitemap.xml,General
+hln.be,BE,nl,https://www.hln.be/sitemap-news.xml,General
+knack.be,BE,nl,https://trends.knack.be/economie/recent-nieuws/sitemap-news.xml,General
+knack.be,BE,nl,https://www.knack.be/news-sitemap.xml,General
