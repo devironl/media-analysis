@@ -2,15 +2,18 @@ import re, json
 import boto3
 import os
 from pymongo import MongoClient
-from secrets import get_secret
 import feedparser
 from datetime import datetime, timezone
 from pprint import pprint
 from xml.etree import ElementTree
 from io import StringIO 
 from dateutil import parser
-
 import requests
+from email import encoders
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
 
 headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36',
@@ -24,18 +27,23 @@ headers = {
 lambda_client = boto3.client("lambda")
 secret_client = boto3.client("secretsmanager")
 
+ses = boto3.client('ses')
+log_email = os.environ["LOG_EMAIL"]
+
 secrets = json.loads(secret_client.get_secret_value(SecretId=os.environ["SECRET_ARN"])["SecretString"])
 
 db = MongoClient(secrets["mongo_host"], username=secrets["mongo_user"], password=secrets["mongo_pwd"])["media_analysis"]
 
 def handler(event=None, context=None):
-    feed_url = event["feed_url"]
-    feedparser.USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
     
-    feed = feedparser.parse(feed_url).get("entries", [])
+    feed_url = event["feed_url"]
     articles = []
+
+    
     
     ## FEEDPARSER
+    feedparser.USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36'
+    feed = feedparser.parse(feed_url).get("entries", [])
     if len(feed) > 0:
     
         for article in feed:
@@ -64,12 +72,17 @@ def handler(event=None, context=None):
             })
 
     ## If Sitemap
-    elif "google" in feed_url or "sitemap" in feed_url:
+    elif "google" in feed_url or "sitemap" in feed_url or "xml" in feed_url:
         r = requests.get(feed_url, headers=headers).text
+        
+        print(r)
         
         # instead of ET.fromstring(xml)
         tree = ElementTree.iterparse(StringIO(r))
-        tree = remove_namespaces(tree)
+        try:
+            tree = remove_namespaces(tree)
+        except:
+            pass
 
         root = tree.root
         for entry in root.findall("url"):
@@ -97,19 +110,26 @@ def handler(event=None, context=None):
                         }
                     }
                 })
+    
+    if len(articles) == 0:
+        msg = MIMEMultipart()
+        msg["Subject"] = "Error with one RSS feed"
+        msg["From"] = log_email
+        msg["To"] = log_email
+        msg.attach(MIMEText(f"This link did not produce any article: {feed_url}", "plain"))
+        ses.send_raw_email(
+            Source=log_email,
+            Destinations=log_email,
+            RawMessage={"Data": msg.as_string()}
+        )
+        
 
     for article in articles:
-        to_crawl = False
         # if not already crawled
         if db["articles"].find_one({"url": article["url"]}) == None:
-            
             # Inserts in DB
-            if article["date"].replace(tzinfo=None) > datetime(2020, 5, 1):
-                db["articles"].insert_one(article)
-                to_crawl = True
-        
-        # Recrawl if no text extracted
-        if to_crawl == True or db["articles"].find_one({"url": article["url"], "text":{"$in":[None, ""]}}) != None:
+            db["articles"].insert_one(article)
+            
             # Crawling
             lambda_client.invoke(
                 FunctionName=os.environ["ARTICLE_LAMBDA"],
@@ -120,6 +140,9 @@ def handler(event=None, context=None):
                     "language": article["meta"]["source"]["language"]
                 })
             )
+            
+    print(f"{len(articles)} have been found in the feed {feed_url}.")
+    
 
 def remove_namespaces(tree):
     for _, el in tree:

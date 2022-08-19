@@ -2,7 +2,6 @@ import re, json
 import boto3
 import os
 from pymongo import MongoClient
-from secrets import get_secret
 from newspaper import Article, fulltext
 import random
 import requests

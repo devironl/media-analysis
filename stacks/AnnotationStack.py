@@ -4,6 +4,10 @@ from aws_cdk import aws_lambda
 from aws_cdk import aws_secretsmanager
 from aws_cdk import aws_apigateway
 from aws_cdk import aws_events, aws_events_targets
+from aws_cdk.aws_lambda_python_alpha import PythonFunction
+from config import project_id, secret_name, account_id, region
+
+
 
 
 class AnnotationStack(Stack):
@@ -17,8 +21,8 @@ class AnnotationStack(Stack):
 
         secret = aws_secretsmanager.Secret.from_secret_attributes(
             scope=self,
-            id="media-analysis-secret",
-            secret_partial_arn=f"arn:aws:secretsmanager:eu-west-3:771823009556:secret:media_analysis_secret"
+            id=f"{project_id}-secret",
+            secret_partial_arn=f"arn:aws:secretsmanager:{region}:{account_id}:secret:{secret_name}"
         )
         
         """ Define Lambdas """
@@ -26,9 +30,9 @@ class AnnotationStack(Stack):
         # TR unique
         textrazor_lambda = PythonFunction(
             scope=self,
-            id=f"media-analysis-textrazor-lambda",
+            id=f"{project_id}-textrazor-lambda",
             runtime=aws_lambda.Runtime.PYTHON_3_9,
-            function_name=f"media-analysis-textrazor-lambda",
+            function_name=f"{project_id}-textrazor-lambda",
             entry=code_path,
             index="textrazor_lambda.py",
             environment={
@@ -42,9 +46,9 @@ class AnnotationStack(Stack):
         # TR on DB
         annotation_lambda = PythonFunction(
             scope=self,
-            id=f"media-analysis-annotation-lambda",
+            id=f"{project_id}-annotation-lambda",
             runtime=aws_lambda.Runtime.PYTHON_3_9,
-            function_name=f"media-analysis-annotation-lambda",
+            function_name=f"{project_id}-annotation-lambda",
             entry=code_path,
             index="annotation_lambda.py",
             environment={
@@ -64,7 +68,7 @@ class AnnotationStack(Stack):
         # Cron every 4 hours
         aws_events.Rule(
             scope=self,
-            id='media-analysis-annotation-cron',
+            id=f'{project_id}-annotation-cron',
             schedule=aws_events.Schedule.rate(Duration.hours(4)),
             targets=[aws_events_targets.LambdaFunction(annotation_lambda)]
         )
