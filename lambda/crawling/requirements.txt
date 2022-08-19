@@ -4,3 +4,4 @@ lxml
 feedparser
 newspaper3k
 python-dateutil
+pandas

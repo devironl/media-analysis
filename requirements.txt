@@ -1,11 +1,11 @@
 aws-cdk-lib
-constructs
 aws_cdk.aws_lambda_python_alpha
 aws_cdk.aws_events_targets
 aws_cdk.aws_secretsmanager
 aws_cdk.aws_apigateway
 aws_cdk.aws_lambda
 aws_cdk.aws_events
+aws_cdk.aws_iam
 feedparser
 requests
 lxml
